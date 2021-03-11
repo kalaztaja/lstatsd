@@ -23,6 +23,7 @@ client.on("message", async (message) => {
   const command = args.shift().toLowerCase();
   if (args.length >= 1) {
     if (command === "track") {
+      responseArray = [];
       playersArray = [];
       statsArray = [];
       await Promise.all(
@@ -35,7 +36,8 @@ client.on("message", async (message) => {
               lol_token
           );
           const id = response.data.id;
-          playersArray.push(response.data.name);
+          playersArray.push(id, response.data.name, message.author.id);
+          responseArray.push(response.data.name + " ");
           const detailResponse = await axios.get(
             "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/" +
               id +
@@ -72,12 +74,14 @@ client.on("message", async (message) => {
           }
         })
       );
+      console.log(playersArray);
       con.query(
         sql_queries.insertIntoPlayers,
         playersArray,
         function (err, result) {
           if (err) {
             message.reply("Database wasn't avaible at the moment");
+            console.log(err);
             return;
           }
           console.log(result);
@@ -86,10 +90,11 @@ client.on("message", async (message) => {
       con.query(sql_queries.insertIntoStats, statsArray, (err, result) => {
         if (err) {
           message.reply("Database wasn't avaible at the moment");
+          console.log(err);
           return;
         }
       });
-      message.reply("Started tracking " + playersArray.join());
+      message.channel.send("Started tracking " + responseArray.join());
     }
     if (command === "check") {
       responseArray = [];
@@ -100,6 +105,7 @@ client.on("message", async (message) => {
             sql_queries.getPlayers,
             [summonerName],
             (error, ogresults, fields) => {
+              console.log(error);
               console.log("Results " + JSON.stringify(ogresults));
               if (ogresults.length === 1) {
                 con.query(
@@ -117,7 +123,7 @@ client.on("message", async (message) => {
                     const responseString =
                       " ```" +
                       ogresults[0].player_name +
-                      " \n " +
+                      " \n\n Stats: \n" +
                       results[0].ranked_tier +
                       " - " +
                       results[0].current_lp +
@@ -135,16 +141,70 @@ client.on("message", async (message) => {
                     message.channel.send(responseString);
                   }
                 );
+              } else {
+                message.channel.send("We aren't tracking " + summonerName);
               }
             }
           );
         })
       );
     }
+    if (command === "remove") {
+      await Promise.all(
+        args.map(async (summonerName) => {
+          con.query(
+            sql_queries.getPlayers,
+            [summonerName],
+            (error, ogresults, fields) => {
+              if (ogresults.length === 1) {
+                if (ogresults[0].discord_id === message.author.id) {
+                  con.query(
+                    sql_queries.removeStatsById,
+                    ogresults[0].pid,
+                    (error, results, fields) => {
+                      if (error && error !== null) {
+                        message.channel.send(
+                          "Removing stats for player " +
+                            ogresults[0].player_name +
+                            " , nothing happened"
+                        );
+                        return;
+                      }
+                    }
+                  );
+                  con.query(
+                    sql_queries.removePlayerByName,
+                    ogresults[0].player_name,
+                    (error, results, fields) => {
+                      if (error && error !== null) {
+                        message.channel.send(
+                          "Removing player " +
+                            ogresults[0].player_name +
+                            " , contact admin"
+                        );
+                        return;
+                      }
+                    }
+                  );
+                } else {
+                  message.channel.send(
+                    "You cannot remove tracking if someone else has done it"
+                  );
+                }
+              } else {
+                message.channel.send("No such summoner");
+                return;
+              }
+            }
+          );
+        })
+      );
+      message.channel.send("Removal was succesful");
+    }
   }
   if (command === "help") {
     message.channel.send(
-      "``` All commands \n !track [summonerName] \n !check [summonerName] \n !remove [summonerName] \n !summary \n \n  Code avaible at https://github.com/kalaztaja/lstatsd```"
+      "```All commands \n!track [summonerName] \n!check [summonerName] \n!remove [summonerName] \n!summary \n\nCode avaible at https://github.com/kalaztaja/lstatsd```"
     );
   }
 });

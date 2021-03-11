@@ -1,6 +1,7 @@
 const createPlayersTable = `create table if not exists players(
     pid varchar(255) primary key,
-    player_name varchar(255)not null unique)`;
+    player_name varchar(255)not null unique,
+    discord_id varchar(255)not null)`;
 
 const createStatsTable = `create table if not exists stats(
         pid varchar(255) NOT NULL PRIMARY KEY, 
@@ -15,7 +16,7 @@ const createStatsTable = `create table if not exists stats(
         last_update varchar(255)
         )`;
 
-const insertIntoPlayers = `INSERT INTO players(pid,player_name) VALUES(?,?)`;
+const insertIntoPlayers = `INSERT INTO players(pid,player_name,discord_id) VALUES(?,?,?)`;
 
 const insertIntoStats = `INSERT INTO stats(
     pid,
@@ -31,6 +32,8 @@ const insertIntoStats = `INSERT INTO stats(
 
 const getPlayers = `SELECT * FROM players WHERE player_name=?`;
 const getPlayerStatsByPid = `SELECT * FROM stats WHERE pid=?`;
+const removePlayerByName = `DELETE FROM players WHERE player_name=?`;
+const removeStatsById = `DELETE FROM stats WHERE pid=?`;
 
 module.exports.createPlayersTable = createPlayersTable;
 module.exports.createStatsTable = createStatsTable;
@@ -38,3 +41,5 @@ module.exports.insertIntoPlayers = insertIntoPlayers;
 module.exports.insertIntoStats = insertIntoStats;
 module.exports.getPlayers = getPlayers;
 module.exports.getPlayerStatsByPid = getPlayerStatsByPid;
+module.exports.removePlayerByName = removePlayerByName;
+module.exports.removeStatsById = removeStatsById;
