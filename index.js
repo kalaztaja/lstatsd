@@ -144,7 +144,7 @@ client.on("message", async (message) => {
   }
   if (command === "help") {
     message.channel.send(
-      "``` All commands \n !track [summonerName] \n !check [summonerName] \n !remove [summonerName] \n !summary ```"
+      "``` All commands \n !track [summonerName] \n !check [summonerName] \n !remove [summonerName] \n !summary \n \n  Code avaible at https://github.com/kalaztaja/lstatsd```"
     );
   }
 });
