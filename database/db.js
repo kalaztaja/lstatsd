@@ -25,6 +25,9 @@ function start_db() {
   con.query(sql_commands.createStatsTable, function (err, result) {
     err ? console.log(err) : console.log(result);
   });
+  con.query(sql_commands.createStatsTable, function (err, result) {
+    err ? console.log(err) : console.log(result);
+  });
   return con;
 }
 

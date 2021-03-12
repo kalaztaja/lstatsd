@@ -16,6 +16,42 @@ const createStatsTable = `create table if not exists stats(
         last_update varchar(255)
         )`;
 
+const createDailyTable = `create table if not exists daily(
+            timestamp int(11) NOT NULL PRIMARY KEY,
+            biggest_lp_gain int,
+            biggest_lp_gain_name varchar(255),
+            biggest_lp_loss int,
+            biggest_lp_loss_name varchar(255),
+            most_wins_in_week int,
+            most_wins_in_week_name varchar(255),
+            most_losses_in_week int,
+            most_losses_in_week_name varchar(255)
+            )`;
+
+const createWeekylTable = `create table if not exists weekly(
+    timestamp varchar(255) NOT NULL PRIMARY KEY,
+    biggest_lp_gain int,
+    biggest_lp_gain_name varchar(255),
+    biggest_lp_loss int,
+    biggest_lp_loss_name varchar(255),
+    most_wins_in_week int,
+    most_wins_in_week_name varchar(255),
+    most_losses_in_week int,
+    most_losses_in_week_name varchar(255)
+    )`;
+
+const createAllTimeTable = `create table if not exists alltime(
+    timestamp varchar(255) NOT NULL PRIMARY KEY,
+    biggest_lp_gain int,
+    biggest_lp_gain_name varchar(255),
+    biggest_lp_loss int,
+    biggest_lp_loss_name varchar(255),
+    most_wins_in_week int,
+    most_wins_in_week_name varchar(255),
+    most_losses_in_week int,
+    most_losses_in_week_name varchar(255)
+    )`;
+
 const insertIntoPlayers = `INSERT INTO players(pid,player_name,discord_id) VALUES(?,?,?)`;
 
 const insertIntoStats = `INSERT INTO stats(
@@ -43,3 +79,5 @@ module.exports.getPlayers = getPlayers;
 module.exports.getPlayerStatsByPid = getPlayerStatsByPid;
 module.exports.removePlayerByName = removePlayerByName;
 module.exports.removeStatsById = removeStatsById;
+module.exports.createWeekylTable = createWeekylTable;
+module.exports.createAllTimelTable = createAllTimeTable;
