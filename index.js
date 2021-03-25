@@ -1,18 +1,15 @@
-const LOL_RANKS = require("./constants.js");
 const db = require("./database/db.js");
-const sql_queries = require("./database/sql_commands.js");
 
 require("dotenv").config();
-const moment = require("moment");
-const axios = require("axios");
 const Discord = require("discord.js");
 
 const prefix = process.env.PREFIX;
 const discord_token = process.env.DISCORD_TOKEN;
-const lol_token = process.env.LOL_TOKEN;
 
 const client = new Discord.Client();
 const con = db.start_db();
+
+const commands = require("./commands");
 
 client.on("message", async (message) => {
   console.log("Heard a message");
@@ -21,192 +18,44 @@ client.on("message", async (message) => {
   const commandBody = message.content.slice(prefix.length);
   const args = commandBody.split(" ");
   const command = args.shift().toLowerCase();
+
+  responseArray = [];
   if (args.length >= 1) {
     if (command === "track") {
-      responseArray = [];
-      playersArray = [];
-      statsArray = [];
       await Promise.all(
         args.map(async (summonerName) => {
-          console.log("Tried to scout " + summonerName);
-          const response = await axios.get(
-            "https://euw1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" +
-              summonerName +
-              "?api_key=" +
-              lol_token
-          );
-          const id = response.data.id;
-          playersArray.push(id, response.data.name, message.author.id);
-          responseArray.push(response.data.name + " ");
-          const detailResponse = await axios.get(
-            "https://euw1.api.riotgames.com/lol/league/v4/entries/by-summoner/" +
-              id +
-              "?api_key=" +
-              lol_token
-          );
-          var soloqStats = {};
-          for (var i = 0; i < detailResponse.data.length; i++) {
-            var testValues = detailResponse.data[i];
-            if (testValues.queueType === "RANKED_SOLO_5x5") {
-              soloqStats = testValues;
-            }
-          }
-          if (Object.keys(soloqStats).length !== 0) {
-            console.log(soloqStats);
-            const uLp = soloqStats.leaguePoints;
-            const uWins = soloqStats.wins;
-            const uLosses = soloqStats.losses;
-            const uRank = soloqStats.tier + " " + soloqStats.rank;
-            const uRank_from_challenger = LOL_RANKS.indexOf(uRank);
-            const current_time = moment().valueOf();
-            statsArray.push(
-              id,
-              0,
-              uLp,
-              uRank,
-              uRank_from_challenger,
-              uWins,
-              uLosses,
-              0,
-              0,
-              current_time
-            );
-          }
+          const trackedSummoners = await commands.START_TRACKING(con, message.author.id, summonerName);
+          trackedSummoners !== null ? responseArray.push(trackedSummoners) : null;
         })
       );
-      console.log(playersArray);
-      con.query(
-        sql_queries.insertIntoPlayers,
-        playersArray,
-        function (err, result) {
-          if (err) {
-            message.reply("Database wasn't avaible at the moment");
-            console.log(err);
-            return;
-          }
-          console.log(result);
-        }
-      );
-      con.query(sql_queries.insertIntoStats, statsArray, (err, result) => {
-        if (err) {
-          message.reply("Database wasn't avaible at the moment");
-          console.log(err);
-          return;
-        }
-      });
-      message.channel.send("Started tracking " + responseArray.join());
+      if (responseArray.length !== 0) responseArray.unshift("Started tracking ");
     }
     if (command === "check") {
-      responseArray = [];
-      console.log("Checking");
       await Promise.all(
         args.map(async (summonerName) => {
-          con.query(
-            sql_queries.getPlayers,
-            [summonerName],
-            (error, ogresults, fields) => {
-              console.log(error);
-              console.log("Results " + JSON.stringify(ogresults));
-              if (ogresults.length === 1) {
-                con.query(
-                  sql_queries.getPlayerStatsByPid,
-                  ogresults[0].pid,
-                  (error, results, fields) => {
-                    console.log(JSON.stringify(results[0]));
-                    const winprcnt =
-                      Math.round(
-                        (results[0].wins /
-                          (results[0].wins + results[0].losses) +
-                          Number.EPSILON) *
-                          100
-                      ) / 100;
-                    const responseString =
-                      " ```" +
-                      ogresults[0].player_name +
-                      " \n\n Stats: \n" +
-                      results[0].ranked_tier +
-                      " - " +
-                      results[0].current_lp +
-                      "LP \n " +
-                      results[0].wins +
-                      " W / " +
-                      results[0].losses +
-                      " L (" +
-                      winprcnt +
-                      ") \n" +
-                      " Last updated " +
-                      moment(parseInt(results[0].last_update)).format("L LT") +
-                      " ```";
-                    console.log(responseString);
-                    message.channel.send(responseString);
-                  }
-                );
-              } else {
-                message.channel.send("We aren't tracking " + summonerName);
-              }
-            }
-          );
+          responseArray.push(await commands.CHECK_PLAYER(con, summonerName));
         })
       );
     }
     if (command === "remove") {
       await Promise.all(
         args.map(async (summonerName) => {
-          con.query(
-            sql_queries.getPlayers,
-            [summonerName],
-            (error, ogresults, fields) => {
-              if (ogresults.length === 1) {
-                if (ogresults[0].discord_id === message.author.id) {
-                  con.query(
-                    sql_queries.removeStatsById,
-                    ogresults[0].pid,
-                    (error, results, fields) => {
-                      if (error && error !== null) {
-                        message.channel.send(
-                          "Removing stats for player " +
-                            ogresults[0].player_name +
-                            " , nothing happened"
-                        );
-                        return;
-                      }
-                    }
-                  );
-                  con.query(
-                    sql_queries.removePlayerByName,
-                    ogresults[0].player_name,
-                    (error, results, fields) => {
-                      if (error && error !== null) {
-                        message.channel.send(
-                          "Removing player " +
-                            ogresults[0].player_name +
-                            " , contact admin"
-                        );
-                        return;
-                      }
-                    }
-                  );
-                } else {
-                  message.channel.send(
-                    "You cannot remove tracking if someone else has done it"
-                  );
-                }
-              } else {
-                message.channel.send("No such summoner");
-                return;
-              }
-            }
-          );
+          responseArray.push(await commands.REMOVE_TRACKING(con, summonerName, message.author.id));
         })
       );
-      message.channel.send("Removal was succesful");
     }
   }
   if (command === "help") {
-    message.channel.send(
-      "```All commands \n!track [summonerName] \n!check [summonerName] \n!remove [summonerName] \n!summary \n\nCode avaible at https://github.com/kalaztaja/lstatsd```"
-    );
+    responseArray.push(commands.HELP_INFO());
   }
+
+  if (responseArray !== undefined && responseArray.length !== 0) {
+    message.channel.send(responseArray.join(""));
+  }
+});
+process.on('uncaughtException', function (err) {
+  console.error(err);
+  console.log("Node NOT Exiting...");
 });
 
 client.login(discord_token);
