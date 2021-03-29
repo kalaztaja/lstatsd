@@ -5,7 +5,7 @@ const sql_query = require("../database/sql_query.js");
 async function CHECK_PLAYER(dbCon, summonerName) {
     try {
         const firstResults = await sql_query(dbCon, sql_commands.getPlayers, [summonerName]);
-        if (firstResults[0]?.pid !== undefined) {
+        if (firstResults !== [] && firstResults[0].pid !== undefined) {
             const detailedResults = await sql_query(dbCon, sql_commands.getPlayerStatsByPid, [firstResults[0].pid]);
             if (detailedResults !== undefined && detailedResults.length !== 0) {
                 const winprcnt = Math.round(

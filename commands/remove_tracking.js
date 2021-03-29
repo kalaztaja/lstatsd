@@ -6,7 +6,7 @@ async function REMOVE_PLAYER(dbCon, summonerName, authorId) {
     try {
         const checkPlayer = await sql_query(dbCon, sql_commands.getPlayers, [summonerName]);
         if (checkPlayer !== undefined && checkPlayer.length !== 0) {
-            if (checkPlayer[0]?.discord_id === authorId) {
+            if (checkPlayer[0].discord_id === authorId) {
                 const result = await sql_query(dbCon, sql_commands.removeStatsById, checkPlayer[0].pid);
                 console.log(result);
                 if (result !== undefined && result.length !== 0) {

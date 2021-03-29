@@ -13,7 +13,7 @@ async function START_TRACKING(dbCon, authorId, summonerName,) {
     statsArray = [];
     try {
         const responseData = await lol_api.getSummonerByName(summonerName);
-        if (responseData?.id !== undefined) {
+        if (responseData !== undefined && responseData.id !== undefined) {
 
             // First check if the summoner is already existing
 
