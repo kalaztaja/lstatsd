@@ -30,6 +30,6 @@ jobs:
     - name: And the files go brr 📈
       uses: SamKirkland/FTP-Deploy-Action@4.0.0
       with:
-        server: ftp://martikkalajohannes@gmail.com.177390@eu383.pebblehost.com:21
+        server: ftp://martikkalajohannes@gmail.com.177390@eu383.pebblehost.com
         username: martikkalajohannes@gmail.com.177390
         password: ${{ secrets.ftp_password }} 
