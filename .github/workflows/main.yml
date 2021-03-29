@@ -23,7 +23,7 @@ jobs:
       uses: actions/checkout@v2
       
     - name: Using node.js
-      uses: actions/setuo-node@v1
+      uses: actions/setup-node@v1
       with:
         node-version: '14'
         
