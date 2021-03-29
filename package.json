@@ -1,4 +1,10 @@
 {
+  "name": "lstatsd-bot",
+  "version": "1.0.0",
+  "description": "A discord bot for league of legends players",
+  "scripts": {
+    "start": "node index.js"
+  },
   "dependencies": {
     "axios": "^0.21.1",
     "discord.js": "^12.5.1",
